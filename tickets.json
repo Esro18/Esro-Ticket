@@ -1,0 +1,23 @@
+{
+  "lastTicket": 2,
+  "tickets": [
+    {
+      "number": "0001",
+      "userId": "1252033642675572796",
+      "channelId": "1479826728770605136",
+      "type": "buy",
+      "status": "open",
+      "claimedBy": null,
+      "openedAt": 1772888586185
+    },
+    {
+      "number": "0002",
+      "userId": "1252033642675572796",
+      "channelId": "1479826731018883104",
+      "type": "buy",
+      "status": "open",
+      "claimedBy": null,
+      "openedAt": 1772888586834
+    }
+  ]
+}
