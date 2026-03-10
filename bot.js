@@ -337,106 +337,153 @@ client.on("interactionCreate", async (interaction) => {
 });
 // توليد الترانسكريبت HTML
 async function generateTranscript(channel, ticketData) {
-  const messages = await channel.messages.fetch({ limit: 100 });
-  const sorted = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-  const botAvatar = channel.client.user.displayAvatarURL();
+    const messages = await channel.messages.fetch({ limit: 100 });
+    const sorted = [...messages.values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-  let html = `
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Transcript Ticket #${ticketData.number}</title>
-    <style>
-      body {
-        background-color: #1e1e1e;
-        color: white;
-        font-family: Arial;
-        padding: 20px;
-      }
-      .header {
-        text-align: center;
-        margin-bottom: 30px;
-      }
-      .header img {
-        width: 90px;
-        border-radius: 50%;
-      }
-      .msg {
-        background: #2b2d31;
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 6px;
-      }
-      .author {
-        font-weight: bold;
-        color: #4ea1ff;
-      }
-      .staff {
-        color: #4eff8a;
-      }
-      .time {
-        font-size: 12px;
-        opacity: 0.7;
-      }
-      img.thumbnail {
-        width: 200px;
-        border-radius: 6px;
-        cursor: zoom-in;
-      }
-      .full {
-        width: 100%;
-      }
-    </style>
-    <script>
-      function zoom(img) {
-        if (img.classList.contains("thumbnail")) {
-          img.classList.remove("thumbnail");
-          img.classList.add("full");
-        } else {
-          img.classList.remove("full");
-          img.classList.add("thumbnail");
+    const botIcon = channel.client.user.displayAvatarURL();
+
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Transcript - Ticket #${ticketData.number}</title>
+
+<style>
+body {
+    background-color: #1e1e2e;
+    color: white;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    border: 3px solid #ffffff33;
+}
+
+.message-box {
+    display: flex;
+    gap: 15px;
+    background: #2b2d31;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.msg-content {
+    flex: 1;
+}
+
+.msg-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.name {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.time {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.text {
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+
+.image {
+    max-width: 300px;
+    border-radius: 8px;
+    margin-top: 10px;
+    cursor: zoom-in;
+}
+
+.full {
+    width: 100%;
+}
+</style>
+
+<script>
+function zoom(img) {
+    if (img.classList.contains("image")) {
+        img.classList.remove("image");
+        img.classList.add("full");
+    } else {
+        img.classList.remove("full");
+        img.classList.add("image");
+    }
+}
+</script>
+
+</head>
+<body>
+
+<div class="header">
+    <img src="${botIcon}">
+    <h1>Esro Ticket Transcript</h1>
+    <h2>Ticket #${ticketData.number}</h2>
+    <p>Opened: ${new Date(ticketData.openedAt).toLocaleString()}</p>
+    <p>Closed: ${new Date().toLocaleString()}</p>
+</div>
+`;
+
+    sorted.forEach((msg) => {
+        const author = msg.author;
+        const avatar = author.displayAvatarURL();
+        const isStaff = msg.member?.roles.cache.has(staffRoleId);
+
+        html += `
+        <div class="message-box">
+            <img src="${avatar}" class="avatar">
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="name" style="color: ${isStaff ? '#ffb3b3' : '#b3d9ff'}">
+                        ${author.tag}
+                    </span>
+                    <span class="time">${new Date(msg.createdTimestamp).toLocaleString()}</span>
+                </div>
+                <div class="text">${msg.content || "<i>No content</i>"}</div>
+            </div>
+        </div>
+        `;
+
+        if (msg.attachments.size > 0) {
+            msg.attachments.forEach((attachment) => {
+                if (attachment.contentType?.startsWith("image/")) {
+                    html += `
+                    <img src="${attachment.url}" class="image" onclick="zoom(this)">
+                    `;
+                }
+            });
         }
-      }
-    </script>
-  </head>
-  <body>
-
-    <div class="header">
-      <img src="${botAvatar}">
-      <h1>Esro Ticket — Transcript</h1>
-      <h2>Ticket #${ticketData.number}</h2>
-      <p>Opened: ${new Date(ticketData.openedAt).toLocaleString()}</p>
-      <p>Closed: ${new Date().toLocaleString()}</p>
-      <hr>
-    </div>
-  `;
-
-  sorted.forEach((msg) => {
-    const isStaff = msg.member?.roles.cache.has(staffRoleId);
-    const authorColor = isStaff ? "staff" : "author";
+    });
 
     html += `
-      <div class="msg">
-        <div class="${authorColor}">${msg.author.tag}</div>
-        <div class="time">${new Date(msg.createdTimestamp).toLocaleString()}</div>
-        <div>${msg.content || ""}</div>
-    `;
+</body>
+</html>
+`;
 
-    if (msg.attachments.size > 0) {
-      msg.attachments.forEach((att) => {
-        if (att.contentType?.startsWith("image/")) {
-          html += `<img src="${att.url}" class="thumbnail" onclick="zoom(this)">`;
-        }
-      });
-    }
-
-    html += `</div>`;
-  });
-
-  html += `</body></html>`;
-
-  return html;
+    return html;
 }
 
 // التعامل مع أزرار التذكرة
